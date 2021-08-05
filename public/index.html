@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html>
+    <head>
+		<title>Option Chain Analysis</title>
+		<!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css"
+    crossorigin="anonymous" /> -->
+		<script data-require="jquery@3.1.1" data-semver="3.1.1" src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+		<link rel="stylesheet" href="/css/style.css" />
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/handlebars.js/4.1.2/handlebars.min.js"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.18.1/moment.js"></script>
+		<style>
+			.container-fluid{
+				width:100%;
+			}
+			.table1{  
+				float:left;
+				height:auto; 
+				border-spacing: 0;
+				border: 1px solid #ddd;
+			}
+			th{
+				border: 1px solid black;
+				border-collapse: collapse;
+			}
+			tr{
+				outline: thin solid
+			}
+			.left{
+				float:left;
+			}
+			.right{
+				float:right;
+				top:0px;
+				right:0px;
+			}
+			.dada{
+				height: 700px;
+				width: 1100px; 
+				position: static;
+			
+			}
+			.box-blue {
+				position: relative;  
+				width: 100%;
+				height: 1200px;
+				top: 700px;         
+				left: 0px;        
+			}
+			.table2{  
+				position: relative;
+				top: 100px;
+				float: left;
+				height:auto; 
+			}
+			.table3{  
+				position: relative;
+				top: 110px;
+				float: left;
+				height:auto; 
+			}
+		</style>
+    </head>
+    <body>
+		<div class="dada">
+		<div class="container-fluid">
+			<div class ="left"><h1>Option Chain</h1>
+			<div class="form-group-inline">
+				<label for="expiryDate" class="form-label">Expiry Date</label>
+				<select onchange="selectedExpiryDate()" name="expiryDate" id="expiryDate"></select>
+							&nbsp;&nbsp;<span id="lastUpdated">select Expiry Date from drop down list</span>
+			</div>
+			
+			<div class="table1"></div>
+		</div>
+  
+		<script id="chain1" type="text/x-handlebars-template" >
+			<table class="table table-bordered table-striped" style="width: 500px;height: auto;">
+				<thead>
+					<tr>
+						<th class="text-center">Instrument Token</th>
+						<th class="text-center">Change</th>
+						<th class="text-center">Last Price</th>
+						<th class="text-center">Buy</th>
+						<th class="text-center">Sell</th>
+					</tr>
+				</thead>
+				<tbody>
+					{{#each objects}}
+						<tr>
+							<td class="text-center">{{instrument_title}}</td>
+							<td class="text-center">{{change}}</td>
+							<td class="text-center">{{last_price}}</td>
+							<td class="text-right"><button onclick="buyFunc('{{getThis}}')">buy</button></td>
+							<td class="text-center"><button onclick="sellFunc('{{getThis}}')">sell</button></td>
+						</tr>
+					{{/each}}
+				</tbody>
+			</table>
+		</script>
+		
+		<script id="chain2" type="text/x-handlebars-template" >
+			<table class="table table-bordered table-striped" style="width: 300px;height: auto;">
+				<thead>
+					<tr>
+						<th class="text-center">Call Change in OI</th>
+						<th class="text-center">Strike Price</th>
+						<th class="text-center">Put change in OI</th>
+					</tr>
+				</thead>
+				<tbody>
+					{{#each objects}}
+						<tr>
+							<td class="text-center">{{ce_oi}}</td>
+							<td class="text-center">{{strike}}</td>
+							<td class="text-center">{{pe_oi}}</td>
+						</tr>
+					{{/each}}
+				</tbody>
+			</table>
+		</script>
+		
+		<script id="chain3" type="text/x-handlebars-template" >
+			<table class="table table-bordered table-striped" style="width: 300px;height: auto;">
+				<thead>
+					<tr>
+						<th class="text-center">Time</th>
+						<th class="text-center">Call writer</th>
+						<th class="text-center">Put Writer</th>
+					</tr>
+				</thead>
+				<tbody>
+					{{#each objects}}
+						<tr>
+							<td class="text-center">{{current_timestamp}}</td>
+							<td class="text-center">{{ce_oi}}</td>
+							<td class="text-center">{{pe_oi}}</td>
+						</tr>
+					{{/each}}
+				</tbody>
+			</table>
+		</script>
+		
+		<div class="right"><h2 id="balance">Balance: 13853.25</h2></div>
+		<div class="table2">1..</div>
+		<div class="table3">2..</div>
+		<div class="chat-popup" id="myForm">
+			<form action="placeOrder()" class="form-container">
+				<h3>Order Window</h3>
+				<div>
+					<label id="instrument_title"> Title</label>
+				</div>
+				<br>
+				<div>
+					<Label id="quantity_title"> Quantity</label>
+				</div>
+				<br>
+				<div class="quantity buttons_added">
+					<input type="button" value="-" class="minus">
+					<input id="quantity" type="number" step="75" min="75" max="" name="quantity" value="75" title="Qty" class="input-text qty text" size="4" pattern="" inputmode="">
+					<input type="button" value="+" class="plus">
+				</div>
+				<br>
+				<br>
+				<button type="button" class="btn" onclick="placeOrder()" >Place Order</button>
+				<button type="button" class="btn cancel" onclick="closeForm()">Close</button>
+			</form>
+		</div>
+		</div>
+		</div>
+		
+		<div class="box-blue"><h6>h</h6>
+			<div class="container">	
+			<button type="button" class="btn" onclick="createExcelAndSendDataOnEmailId()" >Send Trades on Mail</button>
+			<button type="button" class="btn" onclick="manageTradeDetailsForToday()" >Settle Trades</button>
+			<div class="tab-wrap">
+		
+			<input type="radio" id="tab1" name="tabGroup1" class="tab" checked>
+			<label for="tab1">Orders</label>
+
+			<input type="radio" id="tab2" name="tabGroup1" class="tab">
+			<label for="tab2">Positions</label>
+
+			<input type="radio" id="tab3" name="tabGroup1" class="tab">
+			<label for="tab3">Holdings</label>
+
+			<div class="tab__content">
+				<p id='ordersWindow'></p>
+			</div>
+
+			<div class="tab__content">
+				<p id='positionsWindow'></p>
+			</div>
+
+			<div class="tab__content">
+				<p id='holdingsWindow'></p>
+			</div>
+
+			</div>
+				
+		</div>	
+		
+		</div>
+
+        <script src="/socket.io/socket.io.js"></script>
+        <script src="/js/chat.js"></script>
+		<script src="/js/script.js"></script>
+    </body>
+</html>

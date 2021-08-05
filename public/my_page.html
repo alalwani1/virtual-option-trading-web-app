@@ -1,0 +1,308 @@
+<script>
+//https://kite.zerodha.com/connect/login?api_key=nsdbfx360xpj5mbh&v=3
+//curl "https://api.kite.trade/instruments/NFO" -H "X-Kite-Version: 3" -H "Authorization: token nsdbfx360xpj5mbh:aE7hpMwb9CSrZ6u1ffg4ba4YPv9vC1U5"
+</script>
+<html>
+
+<head>
+  <title>Option Chain Analysis</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css"
+    crossorigin="anonymous" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/handlebars.js/4.1.2/handlebars.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.18.1/moment.js"></script>
+  <script src="https://kite.trade/publisher.js?v=3"></script>
+  <script src="ticker_bundle.js"></script>
+  <script src="connect_bundle.js"></script>
+  <style>
+    .container-fluid{
+      width:100%;
+    }
+    .table1{  
+      float:left;
+      width:35%; 
+      height:auto; 
+    }
+    .table2{  
+      height:auto; 
+    }
+  </style>
+</head>
+
+<body onload="initial()">
+  <div class="container-fluid">
+    <h1>Option Chain</h1>
+  </div>
+  
+  <script id="chain1" type="text/x-handlebars-template" >
+    <table class="table table-bordered table-striped" style="width: 800px;height: auto;">
+      <thead>
+        <tr>
+          <th>Call change in OI</th>
+          <th>Strike Price</th>
+          <th>Put Change in OI</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{#each option_chain}}
+        <tr>
+          <td class="text-center">{{ CE.changeinOpenInterest }}</td>
+          <th class="text-center">{{ strikePrice }}</th>
+          <td class="text-left">{{ PE.changeinOpenInterest }}</td>
+        </tr>
+        {{/each}}
+      </tbody>
+    </table>
+  </script>
+
+  <script id="chain2" type="text/x-handlebars-template">
+    <table class="table table-bordered table-striped" style="width: 400px;height: auto;">
+      <thead>
+        <tr>
+          <th class="text-center">Instrument_Token</th>
+          <th class="text-center">Change</th>
+          <th class="text-center">Last_Price</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{#each this}}
+        <tr>
+          <td class="text-right">{{ instrument_token }}</td>
+          <td class="text-center">{{ change }}</td>
+          <td class="text-left">{{ last_price }}</td>
+        </tr>
+        {{/each}}
+      </tbody>
+    </table>
+  </script>
+  
+  
+<script>
+	var api_key = "nsdbfx360xpj5mbh",
+		secret = "58zau2xyfpwogfeor3q9av36zl3pq82g",
+		request_token = "5U2ba95g3vEMN7MmuknzN6utC7jQXG3G",
+		access_token = "BzS1F7Yp3MbaqdkySw0Ni65m32k5EnUV";
+	
+	var options = {
+		"api_key": api_key,
+		"debug": false
+	};
+
+	var expirydate_based_instrument_types_numbers = {},
+		formated_Title_For_EachEntry = {};
+
+	var nifty_instrumentsitems = [14643458, 14643714, 14643970, 14644226, 14644482, 14647810],
+		expiryDates = [], 
+		option_chain_data = [],
+		option_chain = [],
+		current_ticks = [];
+		
+	var openPrice=14400,
+		call_oi_change=0,
+		put_oi_change=0;
+	
+	
+	var kc = new KiteConnect(options);
+	
+	
+	var ticker = new KiteTicker({
+		api_key: api_key,
+		access_token: access_token
+	 });
+
+
+	function initial()
+	{
+		
+		//kc.setSessionExpiryHook(sessionHook);
+
+		if(!access_token) {
+			kc.generateSession(request_token, secret)
+			.then(function(response) {
+				console.log("Response", response);
+				init();
+			})
+			.catch(function(err) {
+				console.log(err);
+			})
+		} else {
+			kc.setAccessToken(access_token);
+			init();
+		}
+		
+		var t=setInterval(renderTbl,1000);
+	}
+	
+	
+	
+	
+	function renderTbl(){//(expirydate_based_instrument_types_numbers, formated_Title_For_EachEntry, ticks) {
+	  let context={};
+	  
+	  current_ticks.forEach(function (record) {
+			let data = {};
+			data[instrument_token] = formated_Title_For_EachEntry[record.instrument_token.toString()];
+			data[change]=record.change;
+			data[last_price] = record.last_price;
+			context.add(data);
+	  });
+	  /*
+      var source = document.getElementById("chain1").innerHTML;
+      var template = Handlebars.compile(source);
+      var category=document.getElementsByClassName('container-fluid');
+      document.getElementsByClassName('table1')[0].innerHTML = template(context);
+	  */
+
+      source = document.getElementById("chain2").innerHTML;
+      template = Handlebars.compile(source);
+      //context= JSON.parse(localStorage.getItem('data'));
+      //context = context.length>20?(context.slice((context.length - 10), context.length)):context;
+      document.getElementsByClassName('table2')[0].innerHTML = template(context);
+    }
+
+
+	function init() {
+		console.log(kc.getLoginURL());
+		getInstruments(["NFO"]);
+	}
+
+	function worker(NFO_Data){
+		//NFO_Data contains all the options data in json format
+		
+		//get NIFTY options data only till now
+		option_chain = getSpecificOptionDataOnly(NFO_Data, "NIFTY");
+		
+		//get OI data which has 400 strikeprice lower and higher than the open strikeprice
+		option_chain_data = getRangedStrikePriceOIData(option_chain, 400);
+	 
+		//get unique exipry dates only
+		expiryDates = getExpiryDates(option_chain_data);
+		
+		//coloection of instrument_types based upon expirydates
+		let data = getExpirydate_Based_InstrumentTypes_List_And_formated_Title_For_EachEntry(option_chain_data, expiryDates);
+		
+		expirydate_based_instrument_types_numbers = data.expirydate_based_instrument_types_numbers;
+		formated_Title_For_EachEntry = data.formated_Title_For_EachEntry;
+		
+		console.log(expirydate_based_instrument_types_numbers);
+		console.log(formated_Title_For_EachEntry);
+		
+		//get formated title for instrument_token
+		
+		
+	}
+
+
+ 
+	
+
+	 
+	 // set autoreconnect with 10 maximum reconnections and 5 second interval
+	 ticker.autoReconnect(true, 10, 5)
+	 ticker.connect();
+	 ticker.on("ticks", onTicks);
+	 ticker.on("connect", subscribe);
+	 
+	 ticker.on("noreconnect", function() {
+	   console.log("noreconnect");
+	 });
+	 
+	 ticker.on("reconnect", function(reconnect_count, reconnect_interval) {
+		console.log("Reconnecting: attempt - ", reconnect_count, " interval - ", reconnect_interval);
+	 });
+	 
+	 function onTicks(ticks) { 
+		current_ticks = ticks;
+		 subscribe();
+		 //renderTbl(expirydate_based_instrument_types_numbers, formated_Title_For_EachEntry, ticks);
+		//console.log("Ticks", ticks);
+	 }
+	 
+	 function subscribe() {
+			
+			ticker.subscribe(nifty_instrumentsitems);
+			ticker.setMode(ticker.modeFull, nifty_instrumentsitems);
+			//console.log(expiryDates);
+	  }
+	  
+	 function getInstruments(exchange) {
+		kc.getInstruments(exchange).then(function(response) {
+			worker(response);
+			//console.log(response);
+		}).catch(function(err) {
+			console.log(err);
+		})
+	}
+
+
+	function getSpecificOptionDataOnly(NFO_Data, Requirement)
+	{
+		//fetch only required options data like "NIFTY" or "BANKNIFTY"
+		let option_data = NFO_Data.filter(record => {
+			return (
+				record.name==Requirement //&& !record.includes("BANKNIFTY") && !record.includes("FINNIFTY") 
+			)
+		});
+		return option_data;
+	}
+
+	function getRangedStrikePriceOIData(option_chain, range)
+	{
+		let option_chain_data = [];
+		option_chain.forEach(function (record) {
+			if(record.strike>=openPrice-range && record.strike<=openPrice+range)
+				option_chain_data.push(record);	
+		});
+		return option_chain_data;
+	}
+
+
+	function getExpiryDates(option_chain_data)
+	{
+		//fetch all expiry dates
+		option_chain_data.forEach(function (record) {
+			expiryDates.push(record.expiry);
+		});
+		
+		//fetch unique dates only
+		let expiryDates_unique = expiryDates.filter((date, i, self) => 
+			self.findIndex(d => d.getTime() === date.getTime()) === i
+		);
+		
+		//sort unique expirydates
+		expiryDates_unique.sort(function(a,b){return a.getTime() - b.getTime()});
+		
+		//doing subarray for to remove unnecessary data
+		expiryDates_unique = expiryDates_unique.slice(0,5);
+		
+		return expiryDates_unique;
+	}
+
+
+	function getExpirydate_Based_InstrumentTypes_List_And_formated_Title_For_EachEntry(option_chain_data, expiryDates)
+	{
+		let expirydate_based_instrument_types_numbers = {},
+			formated_Title_For_EachEntry = {};
+		
+		//sizing array upto the size of expirydates array size
+		expiryDates.forEach(function (record) {
+			expirydate_based_instrument_types_numbers[record] = [];
+		});
+		
+		//storing instrument_tokens based upon the expirydate 
+		option_chain_data.forEach(function (record) {
+			if(record.expiry in expirydate_based_instrument_types_numbers){
+				expirydate_based_instrument_types_numbers[record.expiry].push(record.instrument_token);
+				formated_Title_For_EachEntry[record.instrument_token] = record.name+" "+moment(record.expiry).format("Do MMM")+ " "+ record.strike + " " + record.instrument_type;
+			}
+		});
+		
+		return {expirydate_based_instrument_types_numbers, formated_Title_For_EachEntry};
+	}
+</script>
+
+
+</body>
+<html>
+
+
+

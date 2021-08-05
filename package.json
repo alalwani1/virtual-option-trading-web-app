@@ -1,0 +1,45 @@
+{
+  "name": "kiteconnect",
+  "version": "3.1.0",
+  "description": "The official JS client library for the Kite Connect trading APIs",
+  "main": "./lib/",
+  "scripts": {
+    "generate-docs": "node_modules/.bin/jsdoc --configure .jsdoc.json --verbose",
+    "start": "node src/data_generator.js",
+    "dev": "nodemon src/data_generator.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zerodhatech/kiteconnectjs.git"
+  },
+  "keywords": [
+    "kiteconnect",
+    "kite",
+    "zerodha",
+    "rainmatter",
+    "trading",
+    "api",
+    "stock",
+    "market"
+  ],
+  "author": "Amit Lalwani",
+  "homepage": "https://github.com/zerodhatech/kiteconnectjs#readme",
+  "dependencies": {
+    "axios": "^0.21.1",
+    "crypto-js": "^3.3.0",
+    "excel4node": "^1.7.2",
+    "express": "^4.17.1",
+    "handlebars": "^4.7.6",
+    "moment": "^2.29.1",
+    "mongodb": "^3.6.3",
+    "nodemailer": "^6.6.3",
+    "nodemon": "^2.0.7",
+    "papaparse": "^5.3.0",
+    "socket.io": "^3.1.0",
+    "ws": "^1.1.5"
+  },
+  "devDependencies": {
+    "jsdoc": "^3.6.6",
+    "minami": "^1.2.3"
+  }
+}
